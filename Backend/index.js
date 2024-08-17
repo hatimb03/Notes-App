@@ -13,7 +13,7 @@ const noteModel = require("./Models/noteModel");
 
 // Connect to MongoDB
 mongoose
-  .connect(config.connectionString)
+  .connect(process.env.connectionString)
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.error("Failed to connect to MongoDB", err));
 
