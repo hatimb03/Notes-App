@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { authenticateToken } = require("./utils");
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 const userModel = require("./Models/userModel");
@@ -298,6 +299,6 @@ app.get("/search-notes", authenticateToken, async (req, res) => {
   }
 });
 
-app.listen(config.host);
+app.listen(PORT);
 
 module.exports = app;
