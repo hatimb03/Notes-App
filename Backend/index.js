@@ -1,5 +1,4 @@
 require("dotenv").config();
-const config = require("./config.json");
 const mongoose = require("mongoose");
 const express = require("express");
 const cors = require("cors");
@@ -18,7 +17,15 @@ mongoose
   .catch((err) => console.error("Failed to connect to MongoDB", err));
 
 app.use(express.json());
-app.use(cors({ origin: "*" }));
+
+const corsOptions = {
+  origin: "http://localhost:3000",
+  credentials: true,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  allowedHeaders: "Content-Type,Authorization",
+};
+
+app.use(cors({ corsOptions }));
 
 app.get("/", (req, res) => {
   res.json({ Data: "hello" });
@@ -27,33 +34,37 @@ app.get("/", (req, res) => {
 // Create an account
 app.post("/create-account", async (req, res) => {
   const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res
-      .status(400)
-      .json({ error: true, message: "All fields are required" });
+  try {
+    if (!name || !email || !password) {
+      return res
+        .status(400)
+        .json({ error: true, message: "All fields are required" });
+    }
+
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ error: true, message: "User already exists" });
+    }
+
+    const user = await userModel.create({ name, email, password });
+
+    const accessToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET_KEY,
+      { expiresIn: "3680m" }
+    );
+
+    return res.json({
+      error: false,
+      user: { name: user.name, email: user.email },
+      accessToken,
+      message: "Registration Successful",
+    });
+  } catch (err) {
+    console.log(err);
   }
-
-  const existingUser = await userModel.findOne({ email });
-  if (existingUser) {
-    return res
-      .status(400)
-      .json({ error: true, message: "User already exists" });
-  }
-
-  const user = await userModel.create({ name, email, password });
-
-  const accessToken = jwt.sign(
-    { userId: user._id },
-    process.env.JWT_SECRET_KEY,
-    { expiresIn: "3680m" }
-  );
-
-  return res.json({
-    error: false,
-    user: { name: user.name, email: user.email },
-    accessToken,
-    message: "Registration Successful",
-  });
 });
 
 // Login
